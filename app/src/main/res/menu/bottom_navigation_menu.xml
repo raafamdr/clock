@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/item_1"
+        android:id="@+id/stopwatchFragment"
         android:enabled="true"
         android:icon="@drawable/ic_stopwatch"
         android:title="@string/stopwatch" />
     <item
-        android:id="@+id/item_2"
+        android:id="@+id/timerFragment"
         android:enabled="true"
         android:icon="@drawable/ic_timer"
         android:title="@string/timer" />
