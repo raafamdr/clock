@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
     app:startDestination="@id/stopwatchFragment">
 
     <fragment
         android:id="@+id/stopwatchFragment"
         android:name="com.rafael.clock.StopwatchFragment"
-        android:label="StopwatchFragment" />
+        android:label="StopwatchFragment"
+        tools:layout="@layout/fragment_stopwatch" />
     <fragment
         android:id="@+id/timerFragment"
         android:name="com.rafael.clock.TimerFragment"
-        android:label="TimerFragment" />
+        android:label="TimerFragment"
+        tools:layout="@layout/fragment_timer" />
 </navigation>
