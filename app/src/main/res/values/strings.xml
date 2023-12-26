@@ -9,4 +9,5 @@
     <string name="pause">Pause</string>
     <string name="stopwatch">Stopwatch</string>
     <string name="timer">Timer</string>
+    <string name="initialTime">00:00.00</string>
 </resources>
