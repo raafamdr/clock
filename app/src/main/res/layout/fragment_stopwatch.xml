@@ -10,12 +10,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="200dp"
+        android:text="@string/initialTime"
         android:textAppearance="?attr/textAppearanceDisplayLarge"
         android:textColor="@color/md_theme_light_shadow"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:text="00:00.00" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/leftButton"
@@ -24,6 +24,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="40dp"
         android:layout_marginBottom="40dp"
+        android:enabled="false"
         android:text="@string/lap"
         app:backgroundTint="@color/md_theme_light_surface"
         app:layout_constraintBottom_toBottomOf="parent"
