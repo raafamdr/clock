@@ -1,8 +1,6 @@
 package com.rafael.clock
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,16 +8,16 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.rafael.clock.databinding.FragmentStopwatchBinding
 import com.rafael.clock.Constants.States
+import kotlinx.coroutines.*
 
 class StopwatchFragment : Fragment() {
     private var _binding: FragmentStopwatchBinding? = null
     private val binding get() = _binding!!
     private var state = States.INIT
 
+    private var job: Job? = null
     private var startTime: Long = 0
     private var elapsedTime: Long = 0
-    private lateinit var handler: Handler
-    private lateinit var runnable: Runnable
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -38,7 +36,6 @@ class StopwatchFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        handler = Handler(Looper.getMainLooper())
         binding.rightButton.setOnClickListener { handleRightButton() }
         binding.leftButton.setOnClickListener { handleLeftButton() }
     }
@@ -75,7 +72,10 @@ class StopwatchFragment : Fragment() {
             R.color.md_theme_light_error,
             States.STARTED
         )
-        runTimer()
+
+        job = CoroutineScope(Dispatchers.Main).launch {
+            runTimer()
+        }
     }
 
     private fun stopTimer() {
@@ -85,7 +85,7 @@ class StopwatchFragment : Fragment() {
             R.color.md_theme_light_primary,
             States.STOPPED
         )
-        handler.removeCallbacks(runnable)
+        job?.cancel()
     }
 
     private fun resumeTimer() {
@@ -95,14 +95,16 @@ class StopwatchFragment : Fragment() {
             R.color.md_theme_light_error,
             States.STARTED
         )
-        runTimer()
+        job = CoroutineScope(Dispatchers.Main).launch {
+            runTimer()
+        }
     }
 
     private fun resetTimer() {
         binding.leftButton.isEnabled = false
         handleButtons(R.string.lap, R.string.start, R.color.md_theme_light_primary, States.INIT)
 
-        handler.removeCallbacks(runnable)
+        job?.cancel()
         binding.textTime.text = getString(R.string.initialTime)
         elapsedTime = 0
     }
@@ -124,15 +126,12 @@ class StopwatchFragment : Fragment() {
         state = status
     }
 
-    private fun runTimer() {
+    private suspend fun runTimer() {
         startTime = System.currentTimeMillis() - elapsedTime
-        runnable = object : Runnable {
-            override fun run() {
-                updateTimer()
-                handler.postDelayed(this, 10) // Update every 10 milliseconds
-            }
+        while (true) {
+            delay(10) // Update every 10 milliseconds
+            updateTimer()
         }
-        handler.post(runnable)
     }
 
     private fun updateTimer() {
