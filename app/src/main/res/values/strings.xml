@@ -10,4 +10,6 @@
     <string name="stopwatch">Stopwatch</string>
     <string name="timer">Timer</string>
     <string name="initialTime">00:00.00</string>
+    <string name="fragmentFormat">%02d:%02d.%02d</string>
+    <string name="notificationFormat">%02d:%02d:%02d</string>
 </resources>
