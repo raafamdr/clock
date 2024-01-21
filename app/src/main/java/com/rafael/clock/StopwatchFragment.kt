@@ -1,5 +1,6 @@
 package com.rafael.clock
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,16 +9,11 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.rafael.clock.databinding.FragmentStopwatchBinding
 import com.rafael.clock.Constants.States
-import kotlinx.coroutines.*
 
 class StopwatchFragment : Fragment() {
     private var _binding: FragmentStopwatchBinding? = null
     private val binding get() = _binding!!
     private var state = States.INIT
-
-    private var job: Job? = null
-    private var startTime: Long = 0
-    private var elapsedTime: Long = 0
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -38,6 +34,20 @@ class StopwatchFragment : Fragment() {
 
         binding.rightButton.setOnClickListener { handleRightButton() }
         binding.leftButton.setOnClickListener { handleLeftButton() }
+
+        StopwatchService.state.observe(viewLifecycleOwner) {
+            updateState(it)
+        }
+
+        StopwatchService.formattedTime.observe(viewLifecycleOwner) {
+            binding.textTime.text = it
+        }
+
+        restoreButtons()
+    }
+
+    private fun updateState(state: States) {
+        this.state = state
     }
 
     private fun handleRightButton() {
@@ -64,89 +74,78 @@ class StopwatchFragment : Fragment() {
         }
     }
 
+    private fun sendCommandToService(action: String) =
+        Intent(requireContext(), StopwatchService::class.java).also {
+            it.action = action
+            requireContext().startService(it)
+        }
+
     private fun startTimer() {
         binding.leftButton.isEnabled = true
-        handleButtons(
-            R.string.lap,
-            R.string.stop,
-            R.color.md_theme_light_error,
-            States.STARTED
-        )
-
-        job = CoroutineScope(Dispatchers.Main).launch {
-            runTimer()
-        }
+        updateButtons(R.string.lap, R.string.stop, R.color.md_theme_light_error)
+        saveButtonsState(R.string.lap, R.string.stop, R.color.md_theme_light_error, 1)
+        sendCommandToService(Constants.ACTION_START_SERVICE)
     }
 
     private fun stopTimer() {
-        handleButtons(
-            R.string.reset,
-            R.string.resume,
-            R.color.md_theme_light_primary,
-            States.STOPPED
-        )
-        job?.cancel()
+        updateButtons(R.string.reset, R.string.resume, R.color.md_theme_light_primary)
+        saveButtonsState(R.string.reset, R.string.resume, R.color.md_theme_light_primary, 1)
+        sendCommandToService(Constants.ACTION_STOP_SERVICE)
     }
 
     private fun resumeTimer() {
-        handleButtons(
-            R.string.lap,
-            R.string.stop,
-            R.color.md_theme_light_error,
-            States.STARTED
-        )
-        job = CoroutineScope(Dispatchers.Main).launch {
-            runTimer()
-        }
+        updateButtons(R.string.lap, R.string.stop, R.color.md_theme_light_error)
+        saveButtonsState(R.string.lap, R.string.stop, R.color.md_theme_light_error, 1)
+        sendCommandToService(Constants.ACTION_RESUME_SERVICE)
     }
 
     private fun resetTimer() {
         binding.leftButton.isEnabled = false
-        handleButtons(R.string.lap, R.string.start, R.color.md_theme_light_primary, States.INIT)
-
-        job?.cancel()
         binding.textTime.text = getString(R.string.initialTime)
-        elapsedTime = 0
+        updateButtons(R.string.lap, R.string.start, R.color.md_theme_light_primary)
+        saveButtonsState(R.string.lap, R.string.start, R.color.md_theme_light_primary, 0)
+        sendCommandToService(Constants.ACTION_RESET_SERVICE)
     }
 
     private fun lap() {
     }
 
-    private fun handleButtons(
-        leftButtonText: Int,
-        rightButtonText: Int,
-        rightButtonColor: Int,
-        status: States
-    ) {
+    private fun updateButtons(leftButtonText: Int, rightButtonText: Int, rightButtonColor: Int) {
         binding.leftButton.text = getString(leftButtonText)
         binding.rightButton.text = getString(rightButtonText)
         binding.rightButton.setBackgroundColor(
-            ContextCompat.getColor(requireContext(), rightButtonColor)
+            ContextCompat.getColor(
+                requireContext(),
+                rightButtonColor
+            )
         )
-        state = status
     }
 
-    private suspend fun runTimer() {
-        startTime = System.currentTimeMillis() - elapsedTime
-        while (true) {
-            delay(10) // Update every 10 milliseconds
-            updateTimer()
-        }
+    private fun saveButtonsState(
+        leftButtonText: Int,
+        rightButtonText: Int,
+        rightButtonColor: Int,
+        isLeftButtonEnabled: Int
+    ) {
+        StopwatchService.leftButtonTextResId = leftButtonText
+        StopwatchService.rightButtonTextResId = rightButtonText
+        StopwatchService.rightButtonColorResId = rightButtonColor
+        StopwatchService.isLeftButtonEnabled = isLeftButtonEnabled
     }
 
-    private fun updateTimer() {
-        elapsedTime = System.currentTimeMillis() - startTime
+    private fun restoreButtons() {
+        if ((StopwatchService.leftButtonTextResId != 0) &&
+            (StopwatchService.rightButtonTextResId != 0) &&
+            (StopwatchService.rightButtonColorResId != 0) &&
+            (StopwatchService.isLeftButtonEnabled != -1)
+        ) {
+            updateButtons(
+                StopwatchService.leftButtonTextResId,
+                StopwatchService.rightButtonTextResId,
+                StopwatchService.rightButtonColorResId
+            )
 
-        val hours = (elapsedTime / (1000 * 60 * 60)).toInt()
-        val minutes = ((elapsedTime / (1000 * 60)) % 60).toInt()
-        val seconds = ((elapsedTime / 1000) % 60).toInt()
-        val milliseconds = (elapsedTime % 1000) / 10
-
-        val formattedTime = when {
-            hours > 0 -> String.format("%02d:%02d.%02d", hours, minutes, seconds)
-            else -> String.format("%02d:%02d.%02d", minutes, seconds, milliseconds)
+            binding.leftButton.isEnabled = StopwatchService.isLeftButtonEnabled == 1
         }
-
-        binding.textTime.text = formattedTime
     }
 }
